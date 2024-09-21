@@ -86,7 +86,7 @@ TaskSurfaceFinishSymbols::TaskSurfaceFinishSymbols(TechDraw::DrawViewPart* view)
     raValues = {"Ra50", "Ra25", "Ra12, 5", "Ra6, 3",
                 "Ra3, 2", "Ra1, 6", "Ra0, 8", "Ra0, 4",
                 "Ra0, 2", "Ra0, 1", "Ra0, 05", "Ra0, 025"};
-    laySymbols = {"", "=", "⟂", "X", "M", "C", "R"};
+    laySymbols = {"", "=", "revertT"/*"⟂"*/, "X", "M", "C", "R"};
     roughGrades = {"", "N1", "N2", "N3", "N4", "N5",
                    "N6", "N7", "N8", "N9", "N10", "N11"};
     ui->setupUi(this);
