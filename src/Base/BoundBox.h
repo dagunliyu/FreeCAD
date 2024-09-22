@@ -34,10 +34,45 @@ namespace Base {
 
 class ViewProjMethod;
 
+//class Plane {
+//	friend wostream& operator <<(wostream& op, Plane& pl);
+//
+//public:						// ax + by + cz + d = 0
+//	bool ok;
+//	double d;				// distance of plane to origin
+//	Vector3d normal;				// normal to plane a = n.dx, b = n.dy, c = n.dz
+//	// constructors
+//	Plane() { ok = false; d = 0; }
+//	Plane(double dist, const Vector3d& n);
+//	Plane(const Point3d& p0, const Point3d& p1, const Point3d& p2);
+//	Plane(const Point3d& p0, const Vector3d& n, bool normalise = true);
+//
+//	// methods
+//	double Dist(const Point3d& p)const;							// signed distance of point to plane
+//	bool Intof(const Line& l, Point3d& intof, double& t)const;		// intersection of plane & line (0 >= t <= 1 if intersect within line)
+//	bool Intof(const Plane& pl, Line& intof)const;					// intersection of 2 planes
+//	bool Intof(const Plane& pl0, const Plane& pl1, Point3d& intof)const;	// intersection of 3 planes
+//	Point3d Near(const Point3d& p)const;							// returns near point to p on the plane
+//	void Mirrored(Matrix* m);										// returns a matrix for a mirror about this
+//};
+
+template <class _Precision>
+class BoundBox3;
+
+template <class _Precision>
+class Plane
+{
+    // ax + by + cz + d = 0
+public:
+	Vector3<_Precision> normal;
+	_Precision d;
+    BoundBox2d bbox;
+};
+
 /** The 3D bounding box class. */
 template <class _Precision>
 class BoundBox3
-{
+{ 
     // helper function
     static bool isOnRayW(_Precision, _Precision, _Precision);
     static bool isOnRayS(_Precision, _Precision, _Precision);
@@ -114,6 +149,8 @@ public:
     inline bool IsInBox (const BoundBox2d &rcbb) const;
     /** Checks whether the bounding box is valid. */
     bool IsValid () const;
+
+	inline bool IsOnBox(const BoundBox2d& plnBox, _Precision eps, bool checkEncircle = false, unsigned short& inOutFlag = 0) const;
     //@}
 
     enum OCTANT {OCT_LDB = 0, OCT_RDB, OCT_LUB, OCT_RUB,
@@ -133,6 +170,8 @@ public:
     inline Vector3<_Precision> CalcPoint (unsigned short usPoint) const;
     /** Returns the plane of the given side. */
     void CalcPlane (unsigned short usPlane, Vector3<_Precision>& rBase, Vector3<_Precision>& rNormal ) const;
+	
+    void CalcPlane(unsigned short usPlane, Plane<_Precision>& crPlane) const;
     /** Calculates the two points of an edge.
      * 0. edge P0-P1      1. edge P1-P2      2. edge P2-P3
      * 3. edge P3-P0      4. edge P4-P5      5. edge P5-P6
@@ -397,6 +436,104 @@ inline bool BoundBox3<_Precision>::IsInBox (const BoundBox2d &rcBB) const
     return true;
 }
 
+//#include <iostream>
+//#include <cmath>
+
+//struct Plane {
+//	double A, B, C, D;
+//};
+//
+//bool planesAreEqual(const Plane& p1, const Plane& p2, double epsilon) {
+//	// 检查法线向量是否成比例，并且常数项是否相等（考虑浮点数误差）
+//	return std::abs(p1.A * p2.B - p1.B * p2.A) <= epsilon &&
+//		std::abs(p1.A * p2.C - p1.C * p2.A) <= epsilon &&
+//		std::abs(p1.B * p2.C - p1.C * p2.B) <= epsilon &&
+//		std::abs(p1.D - p2.D) <= epsilon;
+//}
+//
+//int main() {
+//	Plane p1 = { 1, 2, 3, 4 };
+//	Plane p2 = { 2, 4, 6, 8 }; // p2是p1的两倍
+//	const double epsilon = 0.00001;
+//
+//	if (planesAreEqual(p1, p2, epsilon)) {
+//		std::cout << "Planes are equal and one plane is within the other." << std::endl;
+//	}
+//	else {
+//		std::cout << "Planes are not equal." << std::endl;
+//	}
+//
+//	return 0;
+//}
+
+template <class _Precision>
+inline bool BoundBox3<_Precision>::IsOnBox(const BoundBox2d& plnBox, _Precision eps
+    , bool checkEncircle, unsigned short& inOutFlag) const
+{ 
+    bool isOnBox = false;
+
+    //! get normal of plane
+    Plane<_Precision> crPlane;
+    crPlane.bbox = plnBox;
+    auto dX = plnBox.LengthX();
+    auto dY = plnBox.LengthY();
+    auto dZ = plnBox.LengthZ();
+    std::vector<unsigned short> pFlag;
+    if (dX < 1e-3 && dY > eps && dZ > eps)
+    {
+        crPlane.plnNormal.Set(1.0f, 0.0f, 0.0f);
+		d = -(crPlane.plnNormal.x * plnBox.MinX + crPlane.plnNormal.y * MinY + crPlane.plnNormal.z * MinZ);
+        pFlag.emplace_back(LEFT);
+        pFlag.emplace_back(RIGHT);
+    }
+	else if (dY < 1e-3 && dX > eps && dZ > eps)
+	{
+        crPlane.plnNormal.Set(0.0f, 1.0f, 0.0f);
+		d = -(crPlane.plnNormal.x * plnBox.MinX + crPlane.plnNormal.y * MinY + crPlane.plnNormal.z * MinZ);
+		pFlag.emplace_back(TOP);
+		pFlag.emplace_back(BOTTOM);
+	}
+	else if (dZ < 1e-3 && dX > eps && dY > eps)
+	{
+        crPlane.plnNormal.Set(0.0f, 0.0f, 1.0f);
+		d = -(crPlane.plnNormal.x * plnBox.MinX + crPlane.plnNormal.y * MinY + crPlane.plnNormal.z * MinZ);
+		pFlag.emplace_back(FRONT);
+		pFlag.emplace_back(BACK);
+	}
+    else
+    {
+        return isOnBox;
+    }
+
+    for (i = 0; (i < pFlag.size()) && (!isOnBox); i++)
+    {
+		Vector3<_Precision> cBase, cNormal;
+		Plane<_Precision> plnOfBox;
+        CalcPlane(i, plnOfBox);
+
+        //! only check the equal state of 2 planes
+        auto delta = abs(plnOfBox.d - crPlane.d);
+        if (delta <= eps)
+        {
+            isOnBox = true;
+        }
+
+        //! check the encircle relationship between planes
+        if (checkEncircle && isOnBox)
+        { 
+			if (crPlane.MinX < plnOfBox.bbox.MinX || crPlane.MaxX > plnOfBox.bbox.MaxX)
+                inOutFlag = 0;
+			if (crPlane.MinY < plnOfBox.bbox.MinY || crPlane.MaxY > plnOfBox.bbox.MaxY)
+                inOutFlag = 0;
+			if (crPlane.MinZ < plnOfBox.bbox.MinZ || crPlane.MaxZ > plnOfBox.bbox.MaxZ)
+                inOutFlag = 0;			
+            inOutFlag = 1;
+        }
+    }
+
+    return isOnBox;
+}
+
 template <class _Precision>
 inline bool BoundBox3<_Precision>::IsValid () const
 {
@@ -531,6 +668,72 @@ inline void BoundBox3<_Precision>::CalcPlane (unsigned short usPlane, Vector3<_P
         break;
     }
 }
+
+template <class _Precision>
+inline void BoundBox3<_Precision>::CalcPlane(unsigned short usPlane, Plane<_Precision>& crPlane) const
+{
+	//d = -(ax + by + cz)
+	switch (usPlane) 
+    {
+	case LEFT:
+        crPlane.plnNormal.Set(1.0f, 0.0f, 0.0f);
+        crPlane.bbox.Add(Vector3<_Precision>(MinX, MinY, MaxZ));
+        crPlane.bbox.Add(Vector3<_Precision>(MinX, MaxY, MinZ));
+        d = -(crPlane.plnNormal.x * MinX + 
+              crPlane.plnNormal.y * MinY + 
+              crPlane.plnNormal.z * MaxZ);
+		break;
+
+	case RIGHT:
+		crPlane.plnNormal.Set(1.0f, 0.0f, 0.0f);
+		crPlane.bbox.Add(Vector3<_Precision>(MaxX, MinY, MaxZ));
+		crPlane.bbox.Add(Vector3<_Precision>(MaxX, MaxY, MinZ));
+		d = -(crPlane.plnNormal.x * MaxX +
+			crPlane.plnNormal.y * MinY +
+			crPlane.plnNormal.z * MaxZ);
+		break;
+
+	case TOP:
+		crPlane.plnNormal.Set(0.0f, 1.0f, 0.0f);
+		crPlane.bbox.Add(Vector3<_Precision>(MinX, MaxY, MaxZ));
+		crPlane.bbox.Add(Vector3<_Precision>(MaxX, MaxY, MinZ));
+		d = -(crPlane.plnNormal.x * MinX +
+			crPlane.plnNormal.y * MaxY +
+			crPlane.plnNormal.z * MaxZ);
+		break;
+
+	case BOTTOM:
+		crPlane.plnNormal.Set(0.0f, 1.0f, 0.0f);
+		crPlane.bbox.Add(Vector3<_Precision>(MinX, MinY, MaxZ));
+		crPlane.bbox.Add(Vector3<_Precision>(MaxX, MinY, MinZ));
+		d = -(crPlane.plnNormal.x * MinX +
+			crPlane.plnNormal.y * MinY +
+			crPlane.plnNormal.z * MaxZ);
+		break;
+
+	case FRONT:
+		crPlane.plnNormal.Set(0.0f, 0.0f, 1.0f);
+		crPlane.bbox.Add(Vector3<_Precision>(MinX, MinY, MaxZ));
+		crPlane.bbox.Add(Vector3<_Precision>(MaxX, MaxY, MaxZ));
+		d = -(crPlane.plnNormal.x * MinX +
+			crPlane.plnNormal.y * MinY +
+			crPlane.plnNormal.z * MaxZ);
+		break;
+
+	case BACK:
+		crPlane.plnNormal.Set(0.0f, 0.0f, 1.0f);
+		crPlane.bbox.Add(Vector3<_Precision>(MinX, MinY, MinZ));
+		crPlane.bbox.Add(Vector3<_Precision>(MaxX, MaxY, MinZ));
+		d = -(crPlane.plnNormal.x * MinX +
+			crPlane.plnNormal.y * MinY +
+			crPlane.plnNormal.z * MinZ);
+		break;
+
+	default:
+		break;
+	}
+}
+
 
 template <class _Precision>
 inline bool BoundBox3<_Precision>::CalcEdge (unsigned short usEdge, Vector3<_Precision>& rcP0, Vector3<_Precision>& rcP1) const
