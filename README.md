@@ -1,7 +1,7 @@
-<a href="https://freecad.org"><img src="https://www.freecad.org/svg/icon-freecad.svg" height="100px" width="100px"></a>
 
-### Your own 3D parametric modeler
+# Fork from FreeCAD for Self 3D Func Test
 
+# Original
 [Website](https://www.freecad.org) • 
 [Documentation](https://wiki.freecad.org) •
 [Forum](https://forum.freecad.org/) •
@@ -12,7 +12,6 @@
 
 [![Release](https://img.shields.io/github/release/freecad/freecad.svg)](https://github.com/freecad/freecad/releases/latest) [![Crowdin](https://d322cqt584bo4o.cloudfront.net/freecad/localized.svg)](https://crowdin.com/project/freecad) [![Liberapay](https://img.shields.io/liberapay/receives/FreeCAD.svg?logo=liberapay)](https://liberapay.com/FreeCAD)
 
-<img src="https://user-images.githubusercontent.com/1828501/174066870-1692005b-f8d7-43fb-a289-6d2f07f73d7f.png" width="800"/>
 
 Overview
 --------
