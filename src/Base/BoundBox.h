@@ -152,8 +152,8 @@ public:
     /** Checks whether the bounding box is valid. */
     bool IsValid () const;
 
-	inline bool IsOnBox(const BoundBox3<_Precision>& plnBox3, const BoundBox2d& plnBox
-        , _Precision eps, bool checkEncircle = false, unsigned short& inOutFlag = 0) const;
+    inline bool IsOnBox(const Base::BoundBox3<_Precision>& outBbox3, const Base::BoundBox3<_Precision>& plnBox3, _Precision eps
+        , bool checkEncircle = false, unsigned short& inOutFlag = 0) const;
     //@}
 
     enum OCTANT {OCT_LDB = 0, OCT_RDB, OCT_LUB, OCT_RUB,
@@ -174,7 +174,7 @@ public:
     /** Returns the plane of the given side. */
     void CalcPlane (unsigned short usPlane, Vector3<_Precision>& rBase, Vector3<_Precision>& rNormal ) const;
 	
-    void CalcPlane(unsigned short usPlane, Plane<_Precision>& crPlane) const;
+    void CalcPlane(const Base::BoundBox3<_Precision>& outBbox3, unsigned short usPlane, Plane<_Precision>& crPlane) const;
     /** Calculates the two points of an edge.
      * 0. edge P0-P1      1. edge P1-P2      2. edge P2-P3
      * 3. edge P3-P0      4. edge P4-P5      5. edge P5-P6
@@ -452,8 +452,8 @@ inline bool BoundBox3<_Precision>::IsInBox (const BoundBox2d &rcBB) const
 //}
 
 template <class _Precision>
-inline bool IsOnBox(const Base::BoundBox3<_Precision>& outBbox3, const Base::BoundBox3<_Precision>& plnBox3, _Precision eps
-    , bool checkEncircle, unsigned short& inOutFlag)
+inline bool BoundBox3<_Precision>::IsOnBox(const Base::BoundBox3<_Precision>& outBbox3, const Base::BoundBox3<_Precision>& plnBox3, _Precision eps
+    , bool checkEncircle, unsigned short& inOutFlag) const
 {
     bool isOnBox = false;
 
@@ -500,7 +500,7 @@ inline bool IsOnBox(const Base::BoundBox3<_Precision>& outBbox3, const Base::Bou
     for (auto& i : pFlag)
     {
         Plane<_Precision> plnOfBox;
-        CalcPlane<_Precision>(outBbox3, i, plnOfBox);
+        CalcPlane(outBbox3, i, plnOfBox);
 
         //! only check the equal state of 2 planes
         auto delta = abs(plnOfBox.d - crPlane.d);
@@ -681,12 +681,8 @@ inline void BoundBox3<_Precision>::CalcPlane (unsigned short usPlane, Vector3<_P
 }
 
 template <class _Precision>
-inline void CalcPlane(const Base::BoundBox3<_Precision>& outBbox3, unsigned short usPlane, Plane<_Precision>& crPlane) const
+inline void BoundBox3<_Precision>::CalcPlane(const Base::BoundBox3<_Precision>& outBbox3, unsigned short usPlane, Plane<_Precision>& crPlane) const
 {
-    enum SIDE
-    {
-        LEFT = 0, RIGHT = 1, TOP = 2, BOTTOM = 3, FRONT = 4, BACK = 5, INVALID = 255
-    };
     //d = -(ax + by + cz)
     switch (usPlane)
     {

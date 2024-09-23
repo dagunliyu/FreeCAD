@@ -121,6 +121,18 @@ void BoxSelection::selectionCallback(void * ud, SoEventCallback * cb)
         cb->setHandled();
 
         std::vector<Part::Feature*> geom = doc->getObjectsOfType<Part::Feature>();
+        
+		// test
+        for (auto it : geom)
+        {
+            Base::BoundBox3d bbox3 = it->Shape.getBoundingBox();
+            Base::BoundBox2d bbox2_pln;
+            Base::BoundBox3d bbox3_pln;
+            Base::BoundBox3d bbox3_cube;
+            unsigned short inOutFlag = 0;
+            bbox3_cube.IsOnBox(bbox3, bbox3_pln, 1e-4, true, inOutFlag);
+        }
+
         for (auto it : geom) {
             Gui::ViewProvider* vp = Gui::Application::Instance->getViewProvider(it);
             if (!vp->isVisible())
